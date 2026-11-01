@@ -48,7 +48,7 @@ function renderRecentProducts(){
  $("recentProducts").innerHTML=rows.length?tableMarkup(rows,false):'<div class="empty-state">No products yet. Add your first product.</div>';
 }
 function tableMarkup(rows,actions=true){
- return '<table class="admin-table"><thead><tr><th>PRODUCT</th><th>STATUS</th><th>PRICE</th><th>PHOTOS</th>'+(actions?'<th>ACTIONS</th>':'')+'</tr></thead><tbody>'+
+ return '<table class="admin-table"><thead><tr><th>PRODUCT</th><th>STATUS</th><th>PRICE</th><th>STOCK</th><th>PHOTOS</th>'+(actions?'<th>ACTIONS</th>':'')+'</tr></thead><tbody>'+
  rows.map(p=>{const photos=productPhotos(p);return '<tr><td><div class="product-cell">'+(photos[0]?'<img src="'+esc(photos[0])+'" alt="">':'<span class="product-placeholder"></span>')+'<span><b>'+esc(p.name)+'</b><small>'+esc(p.category||"Uncategorised")+'</small></span></div></td><td><span class="status-pill '+(p.active?'active':'hidden-status')+'">'+(p.active?'Active':'Hidden')+'</span></td><td>'+money(p.price)+'</td><td>'+photos.length+' photo(s)</td>'+(actions?'<td><div class="row-actions"><button class="outline-btn" data-edit="'+esc(p.id)+'">Edit</button><button class="danger-btn" data-delete="'+esc(p.id)+'">Delete</button></div></td>':'')+'</tr>'}).join("")+'</tbody></table>';
 }
 async function loadProducts(){
