@@ -32,10 +32,14 @@ async function init(){
  const id=new URLSearchParams(location.search).get("id");
  if(!id){root.innerHTML='<div class="detail-error">Product not found. <a href="index.html#shop">Return to the shop</a>.</div>';return}
  try{
+  if(!window.supabase||typeof window.supabase.createClient!=="function")throw new Error("Supabase library load হয়নি। পেজটি Ctrl+Shift+R দিয়ে Refresh করুন।");
   const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  const {data,error}=await client.from("products").select("*").eq("id",id).eq("active",true).maybeSingle();
-  if(error)throw error;if(!data)throw new Error("This product is unavailable or no longer listed.");
+  const request=client.from("products").select("*").eq("id",id).eq("active",true).maybeSingle();
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Supabase থেকে উত্তর আসতে বেশি সময় লাগছে। ইন্টারনেট/ডেটাবেস সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।")),12000));
+  const {data,error}=await Promise.race([request,timeout]);
+  if(error)throw new Error(error.message||"পণ্যের তথ্য আনা যায়নি।");
+  if(!data)throw new Error("এই পণ্যটি পাওয়া যায়নি বা Active নয়।");
   render(data);
- }catch(e){root.innerHTML='<div class="detail-error">'+esc(e.message)+'<p><a href="index.html#shop">Return to the shop</a></p></div>';console.error(e)}
+ }catch(e){console.error("Nur Fashion product page:",e);root.innerHTML='<div class="detail-error">'+esc(e.message)+'<p><a href="index.html#shop">Return to the shop</a></p></div>';console.error(e)}
 }
 init();
