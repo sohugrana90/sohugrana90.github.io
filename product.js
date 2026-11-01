@@ -1,6 +1,6 @@
 // Dynamic SEO product detail page for Nur Fashion House
 const SUPABASE_URL="https://icpklfqzrfceaazhashh.supabase.co";
-const SUPABASE_KEY="sb_publishable_u_ZCC7ueb8VGJYr9KzXZbg_gPHxRK1O";
+const SUPABASE_KEY="sb_publishable_u_zCC7ueb8VGJYr9KzXZbg_gPHxRK1O";
 const STORE_WHATSAPP="8801722574666";
 const root=document.getElementById("productDetail");
 const money=v=>"৳"+Number(v||0).toLocaleString("en-BD");
