@@ -130,15 +130,10 @@ async function loadBanners(){
  bannersCache=data||[];renderBannerTable();
 }
 function renderBannerTable(){
- $("bannerTable").innerHTML=bannersCache.length?'<table class="admin-table"><thead><tr><th>BANNER</th><th>CATEGORY</th><th>STATUS</th><th>ORDER</th><th>ACTIONS</th></tr></thead><tbody>'+bannersCache.map(b=>'<tr><td><div class="product-cell">'+(b.image_url?'<img src="'+esc(b.image_url)+'" alt="">':'')+'<span><b>'+esc(b.title)+'</b><small>'+esc(b.subtitle||"")+'</small></span></div></td><td>'+esc(b.category)+'</td><td><span class="status-pill '+(b.active?'active':'hidden-status')+'">'+(b.active?'Active':'Hidden')+'</span></td><td>'+Number(b.sort_order||0)+'</td><td><div class="row-actions"><button class="outline-btn" data-banner-edit="'+esc(b.id)+'">Edit</button><button class="danger-btn" data-banner-delete="'+esc(b.id)+'">Delete</button></div></td></tr>').join("")+'</tbody></table>':'<div class="empty-state">No catalog banners yet. Add your first banner.</div>';
-}
-function fillBannerCategories(selected){
- const cats=[...new Set(productsCache.map(p=>p.category).filter(Boolean))].sort();
- $("bannerCategory").innerHTML=cats.map(c=>'<option value="'+esc(c)+'" '+(c===selected?'selected':'')+'>'+esc(c)+'</option>').join("");
+ $("bannerTable").innerHTML=bannersCache.length?'<table class="admin-table"><thead><tr><th>BANNER</th><th>COLLECTION TAG</th><th>STATUS</th><th>ORDER</th><th>ACTIONS</th></tr></thead><tbody>'+bannersCache.map(b=>'<tr><td><div class="product-cell">'+(b.image_url?'<img src="'+esc(b.image_url)+'" alt="">':'')+'<span><b>'+esc(b.title)+'</b><small>'+esc(b.subtitle||"")+'</small></span></div></td><td>'+esc(b.tag||b.category||'—')+'</td><td><span class="status-pill '+(b.active?'active':'hidden-status')+'">'+(b.active?'Active':'Hidden')+'</span></td><td>'+Number(b.sort_order||0)+'</td><td><div class="row-actions"><button class="outline-btn" data-banner-edit="'+esc(b.id)+'">Edit</button><button class="danger-btn" data-banner-delete="'+esc(b.id)+'">Delete</button></div></td></tr>').join("")+'</tbody></table>':'<div class="empty-state">No catalog banners yet. Add your first banner.</div>';
 }
 function openBannerEditor(b){
- $("bannerForm").reset();$("bannerId").value=b?.id||"";$("bannerTitle").value=b?.title||"";$("bannerSubtitle").value=b?.subtitle||"";$("bannerOrder").value=b?.sort_order??bannersCache.length;$("bannerActive").checked=b?!!b.active:true;$("bannerImageNote").textContent=b?.image_url?"Current image will be kept if no new image is selected.":"Choose a banner image to upload.";
- fillBannerCategories(b?.category||productsCache.find(p=>p.category)?.category||"");
+ $("bannerForm").reset();$("bannerId").value=b?.id||"";$("bannerTitle").value=b?.title||"";$("bannerSubtitle").value=b?.subtitle||"";$("bannerTag").value=b?.tag||b?.category||"";$("bannerOrder").value=b?.sort_order??bannersCache.length;$("bannerActive").checked=b?!!b.active:true;$("bannerImageNote").textContent=b?.image_url?"Current image will be kept if no new image is selected.":"Choose a banner image to upload.";
  $("bannerEditorTitle").textContent=b?"Edit banner":"Add banner";$("bannerMsg").textContent="";$("bannerEditor").classList.remove("hidden");$("bannerEditor").scrollIntoView({behavior:"smooth",block:"center"});
 }
 $("addBannerBtn").onclick=()=>openBannerEditor(null);
