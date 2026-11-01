@@ -30,16 +30,19 @@ function render(p){
 async function init(){
  document.getElementById("year").textContent=new Date().getFullYear();
  const id=new URLSearchParams(location.search).get("id");
- if(!id){root.innerHTML='<div class="detail-error">Product not found. <a href="index.html#shop">Return to the shop</a>.</div>';return}
+ if(!id){root.innerHTML='<div class="detail-error">Product link is missing an ID. <a href="index.html#shop">Return to shop</a>.</div>';return}
  try{
-  if(!window.supabase||typeof window.supabase.createClient!=="function")throw new Error("Supabase library load হয়নি। পেজটি Ctrl+Shift+R দিয়ে Refresh করুন।");
-  const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  const request=client.from("products").select("*").eq("id",id).eq("active",true).maybeSingle();
-  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("Supabase থেকে উত্তর আসতে বেশি সময় লাগছে। ইন্টারনেট/ডেটাবেস সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।")),12000));
-  const {data,error}=await Promise.race([request,timeout]);
-  if(error)throw new Error(error.message||"পণ্যের তথ্য আনা যায়নি।");
-  if(!data)throw new Error("এই পণ্যটি পাওয়া যায়নি বা Active নয়।");
-  render(data);
- }catch(e){console.error("Nur Fashion product page:",e);root.innerHTML='<div class="detail-error">'+esc(e.message)+'<p><a href="index.html#shop">Return to the shop</a></p></div>';console.error(e)}
+  const url=SUPABASE_URL+"/rest/v1/products?id=eq."+encodeURIComponent(id)+"&active=eq.true&select=*";
+  const response=await fetch(url,{headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Accept":"application/json"},cache:"no-store"});
+  const body=await response.text();
+  if(!response.ok)throw new Error("Database error "+response.status+": "+body.slice(0,250));
+  const rows=JSON.parse(body);
+  if(!Array.isArray(rows)||!rows.length)throw new Error("Product not found or inactive.");
+  render(rows[0]);
+ }catch(e){
+  console.error("Nur Fashion House product details:",e);
+  root.innerHTML='<div class="detail-error"><strong>Product details could not load</strong><p>'+esc(e.message||"Unknown error")+'</p><p><a href="index.html#shop">Return to shop</a></p></div>';
+ }
 }
+window.setTimeout(()=>{if(root&&root.textContent.includes("Loading product details"))root.innerHTML='<div class="detail-error">Product script did not start. Please press Ctrl+Shift+R.</div>'},12000);
 init();
