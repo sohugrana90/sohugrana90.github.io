@@ -74,7 +74,7 @@ $("productTable").addEventListener("click",e=>{
 });
 $("recentProducts").addEventListener("click",e=>{const edit=e.target.closest("[data-edit]");if(edit){showSection("products");const p=productsCache.find(x=>String(x.id)===edit.dataset.edit);if(p)editProduct(p)}});
 function openEditor(){
- $("productForm").reset();$("productId").value="";$("pActive").checked=true;$("pStock").value="0";
+ $("productForm").reset();$("productId").value="";$("pActive").checked=true;$("pStock").value="0";$("pCatalogTags").value="";
  window.currentProductImages=[];$("existingPhotoNote").textContent="";$("productMsg").textContent="";
  $("editorTitle").textContent="Add product";$("productEditor").classList.remove("hidden");
  $("productEditor").scrollIntoView({behavior:"smooth",block:"start"});
@@ -88,7 +88,7 @@ function editProduct(p){
  $("editorTitle").textContent="Edit product";
  $("existingPhotoNote").textContent=window.currentProductImages.length?"Current gallery: "+window.currentProductImages.length+" photo(s). New uploads will be added.":"No existing product photos.";
  $("productId").value=p.id;$("pName").value=p.name||"";$("pNameBn").value=p.name_bn||"";
- $("pCategory").value=p.category||"Women's Fashion";$("pPrice").value=p.price??"";$("pStock").value=p.stock_quantity??0;
+ $("pCategory").value=p.category||"Women's Fashion";$("pCatalogTags").value=Array.isArray(p.catalog_tags)?p.catalog_tags.join(", "):"";$("pPrice").value=p.price??"";$("pStock").value=p.stock_quantity??0;
  $("pSizes").value=Array.isArray(p.sizes)?p.sizes.join(","):"";
  $("pDescription").value=p.description||"";$("pActive").checked=!!p.active;
  $("pImage").value="";$("productMsg").textContent="";
@@ -107,7 +107,7 @@ $("productForm").onsubmit=async e=>{
    uploaded.push(sb.storage.from("product-images").getPublicUrl(path).data.publicUrl);
   }
   const image_urls=[...new Set([...existing,...uploaded])];
-  const payload={name:$("pName").value.trim(),name_bn:$("pNameBn").value.trim(),category:$("pCategory").value.trim(),price:Number($("pPrice").value),stock_quantity:Number($("pStock").value),sizes:$("pSizes").value.split(",").map(x=>x.trim()).filter(Boolean),description:$("pDescription").value.trim(),active:$("pActive").checked};
+  const payload={name:$("pName").value.trim(),name_bn:$("pNameBn").value.trim(),category:$("pCategory").value.trim(),catalog_tags:$("pCatalogTags").value.split(",").map(x=>x.trim()).filter(Boolean),price:Number($("pPrice").value),stock_quantity:Number($("pStock").value),sizes:$("pSizes").value.split(",").map(x=>x.trim()).filter(Boolean),description:$("pDescription").value.trim(),active:$("pActive").checked};
   if(image_urls.length){payload.image_urls=image_urls;payload.image_url=image_urls[0]}
   const res=id?await sb.from("products").update(payload).eq("id",id):await sb.from("products").insert(payload);
   if(res.error)throw res.error;
@@ -154,7 +154,7 @@ $("bannerForm").onsubmit=async e=>{
   let image_url=old?.image_url||"",file=$("bannerImage").files[0];
   if(file){const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg",path="banners/"+crypto.randomUUID()+"."+ext;const up=await sb.storage.from("product-images").upload(path,file,{upsert:true});if(up.error)throw up.error;image_url=sb.storage.from("product-images").getPublicUrl(path).data.publicUrl}
   if(!image_url)throw new Error("Please choose a banner image.");
-  const payload={title:$("bannerTitle").value.trim(),subtitle:$("bannerSubtitle").value.trim(),category:$("bannerCategory").value,image_url,sort_order:Number($("bannerOrder").value||0),active:$("bannerActive").checked};
+  const payload={title:$("bannerTitle").value.trim(),subtitle:$("bannerSubtitle").value.trim(),tag:$("bannerTag").value.trim(),category:$("bannerTag").value.trim(),image_url,sort_order:Number($("bannerOrder").value||0),active:$("bannerActive").checked};
   const res=id?await sb.from("catalog_banners").update(payload).eq("id",id):await sb.from("catalog_banners").insert(payload);if(res.error)throw res.error;
   $("bannerMsg").textContent="Banner saved successfully.";$("bannerEditor").classList.add("hidden");await loadBanners();
  }catch(err){$("bannerMsg").textContent=err.message||"Could not save banner."}
