@@ -74,7 +74,7 @@ $("productTable").addEventListener("click",e=>{
 });
 $("recentProducts").addEventListener("click",e=>{const edit=e.target.closest("[data-edit]");if(edit){showSection("products");const p=productsCache.find(x=>String(x.id)===edit.dataset.edit);if(p)editProduct(p)}});
 function openEditor(){
- $("productForm").reset();$("productId").value="";$("pActive").checked=true;
+ $("productForm").reset();$("productId").value="";$("pActive").checked=true;$("pStock").value="0";
  window.currentProductImages=[];$("existingPhotoNote").textContent="";$("productMsg").textContent="";
  $("editorTitle").textContent="Add product";$("productEditor").classList.remove("hidden");
  $("productEditor").scrollIntoView({behavior:"smooth",block:"start"});
@@ -88,7 +88,7 @@ function editProduct(p){
  $("editorTitle").textContent="Edit product";
  $("existingPhotoNote").textContent=window.currentProductImages.length?"Current gallery: "+window.currentProductImages.length+" photo(s). New uploads will be added.":"No existing product photos.";
  $("productId").value=p.id;$("pName").value=p.name||"";$("pNameBn").value=p.name_bn||"";
- $("pCategory").value=p.category||"Women's Fashion";$("pPrice").value=p.price??"";
+ $("pCategory").value=p.category||"Women's Fashion";$("pPrice").value=p.price??"";$("pStock").value=p.stock_quantity??0;
  $("pSizes").value=Array.isArray(p.sizes)?p.sizes.join(","):"";
  $("pDescription").value=p.description||"";$("pActive").checked=!!p.active;
  $("pImage").value="";$("productMsg").textContent="";
@@ -107,7 +107,7 @@ $("productForm").onsubmit=async e=>{
    uploaded.push(sb.storage.from("product-images").getPublicUrl(path).data.publicUrl);
   }
   const image_urls=[...new Set([...existing,...uploaded])];
-  const payload={name:$("pName").value.trim(),name_bn:$("pNameBn").value.trim(),category:$("pCategory").value.trim(),price:Number($("pPrice").value),sizes:$("pSizes").value.split(",").map(x=>x.trim()).filter(Boolean),description:$("pDescription").value.trim(),active:$("pActive").checked};
+  const payload={name:$("pName").value.trim(),name_bn:$("pNameBn").value.trim(),category:$("pCategory").value.trim(),price:Number($("pPrice").value),stock_quantity:Number($("pStock").value),sizes:$("pSizes").value.split(",").map(x=>x.trim()).filter(Boolean),description:$("pDescription").value.trim(),active:$("pActive").checked};
   if(image_urls.length){payload.image_urls=image_urls;payload.image_url=image_urls[0]}
   const res=id?await sb.from("products").update(payload).eq("id",id):await sb.from("products").insert(payload);
   if(res.error)throw res.error;
