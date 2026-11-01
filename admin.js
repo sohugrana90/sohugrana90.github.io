@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id);
-let sb=null,productsCache=[],ordersCache=[];
+let sb=null,productsCache=[],ordersCache=[],bannersCache=[];
 const money=v=>"৳"+Number(v||0).toLocaleString("en-BD");
 const config=()=>({url:localStorage.getItem("nfh_supabase_url"),key:localStorage.getItem("nfh_supabase_key")});
 function connect(){
@@ -18,9 +18,9 @@ function showDashboard(){
  $("todayLabel").textContent=new Date().toLocaleDateString("en-BD",{day:"numeric",month:"short",year:"numeric"});
  loadDashboardData();
 }
-async function loadDashboardData(){await Promise.all([loadProducts(),loadOrders()]);renderMetrics()}
+async function loadDashboardData(){await Promise.all([loadProducts(),loadOrders(),loadBanners()]);renderMetrics()}
 function showSection(name){
- ["overview","products","orders"].forEach(key=>$(key+"Section").classList.toggle("hidden",key!==name));
+ ["overview","products","orders","banners"].forEach(key=>$(key+"Section").classList.toggle("hidden",key!==name));
  document.querySelectorAll("[data-section]").forEach(b=>b.classList.toggle("active",b.dataset.section===name));
  $("pageTitle").textContent=name.charAt(0).toUpperCase()+name.slice(1);
 }
@@ -123,6 +123,43 @@ async function deleteProduct(id){
  const {error}=await sb.from("products").delete().eq("id",id);
  if(error)alert(error.message);else await loadProducts();
 }
+
+async function loadBanners(){
+ const {data,error}=await sb.from("catalog_banners").select("*").order("sort_order",{ascending:true});
+ if(error){$("bannerTable").innerHTML='<div class="empty-state">Banner table is not ready. Run the SQL setup shown in the website setup instructions. '+esc(error.message)+'</div>';return}
+ bannersCache=data||[];renderBannerTable();
+}
+function renderBannerTable(){
+ $("bannerTable").innerHTML=bannersCache.length?'<table class="admin-table"><thead><tr><th>BANNER</th><th>CATEGORY</th><th>STATUS</th><th>ORDER</th><th>ACTIONS</th></tr></thead><tbody>'+bannersCache.map(b=>'<tr><td><div class="product-cell">'+(b.image_url?'<img src="'+esc(b.image_url)+'" alt="">':'')+'<span><b>'+esc(b.title)+'</b><small>'+esc(b.subtitle||"")+'</small></span></div></td><td>'+esc(b.category)+'</td><td><span class="status-pill '+(b.active?'active':'hidden-status')+'">'+(b.active?'Active':'Hidden')+'</span></td><td>'+Number(b.sort_order||0)+'</td><td><div class="row-actions"><button class="outline-btn" data-banner-edit="'+esc(b.id)+'">Edit</button><button class="danger-btn" data-banner-delete="'+esc(b.id)+'">Delete</button></div></td></tr>').join("")+'</tbody></table>':'<div class="empty-state">No catalog banners yet. Add your first banner.</div>';
+}
+function fillBannerCategories(selected){
+ const cats=[...new Set(productsCache.map(p=>p.category).filter(Boolean))].sort();
+ $("bannerCategory").innerHTML=cats.map(c=>'<option value="'+esc(c)+'" '+(c===selected?'selected':'')+'>'+esc(c)+'</option>').join("");
+}
+function openBannerEditor(b){
+ $("bannerForm").reset();$("bannerId").value=b?.id||"";$("bannerTitle").value=b?.title||"";$("bannerSubtitle").value=b?.subtitle||"";$("bannerOrder").value=b?.sort_order??bannersCache.length;$("bannerActive").checked=b?!!b.active:true;$("bannerImageNote").textContent=b?.image_url?"Current image will be kept if no new image is selected.":"Choose a banner image to upload.";
+ fillBannerCategories(b?.category||productsCache.find(p=>p.category)?.category||"");
+ $("bannerEditorTitle").textContent=b?"Edit banner":"Add banner";$("bannerMsg").textContent="";$("bannerEditor").classList.remove("hidden");$("bannerEditor").scrollIntoView({behavior:"smooth",block:"center"});
+}
+$("addBannerBtn").onclick=()=>openBannerEditor(null);
+$("cancelBannerBtn").onclick=()=>$("bannerEditor").classList.add("hidden");
+$("bannerTable").addEventListener("click",async e=>{
+ const edit=e.target.closest("[data-banner-edit]"),del=e.target.closest("[data-banner-delete]");
+ if(edit){const b=bannersCache.find(x=>String(x.id)===edit.dataset.bannerEdit);if(b)openBannerEditor(b)}
+ if(del){const b=bannersCache.find(x=>String(x.id)===del.dataset.bannerDelete);if(!b||!confirm('Delete banner "'+b.title+'"?'))return;const {error}=await sb.from("catalog_banners").delete().eq("id",b.id);if(error)alert(error.message);else await loadBanners()}
+});
+$("bannerForm").onsubmit=async e=>{
+ e.preventDefault();const save=$("saveBannerBtn"),id=$("bannerId").value,old=bannersCache.find(b=>String(b.id)===id);save.disabled=true;save.textContent="Saving…";$("bannerMsg").textContent="Uploading and saving banner…";
+ try{
+  let image_url=old?.image_url||"",file=$("bannerImage").files[0];
+  if(file){const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg",path="banners/"+crypto.randomUUID()+"."+ext;const up=await sb.storage.from("product-images").upload(path,file,{upsert:true});if(up.error)throw up.error;image_url=sb.storage.from("product-images").getPublicUrl(path).data.publicUrl}
+  if(!image_url)throw new Error("Please choose a banner image.");
+  const payload={title:$("bannerTitle").value.trim(),subtitle:$("bannerSubtitle").value.trim(),category:$("bannerCategory").value,image_url,sort_order:Number($("bannerOrder").value||0),active:$("bannerActive").checked};
+  const res=id?await sb.from("catalog_banners").update(payload).eq("id",id):await sb.from("catalog_banners").insert(payload);if(res.error)throw res.error;
+  $("bannerMsg").textContent="Banner saved successfully.";$("bannerEditor").classList.add("hidden");await loadBanners();
+ }catch(err){$("bannerMsg").textContent=err.message||"Could not save banner."}
+ finally{save.disabled=false;save.textContent="Save banner"}
+};
 async function loadOrders(){
  const {data,error}=await sb.from("orders").select("*").order("created_at",{ascending:false});
  if(error){$("orderList").innerHTML='<div class="empty-state">'+esc(error.message)+'</div>';return}
